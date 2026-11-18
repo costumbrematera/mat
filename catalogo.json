@@ -2,8 +2,8 @@
   "store": {
     "name": "Costumbre Matera",
     "tagline": "Hecho a mano en Argentina",
-    "whatsapp": "",
-    "instagram": "",
+    "whatsapp": "542281362607",
+    "instagram": "costumbre_matera.s",
     "email": "",
     "shipping": "Envíos a todo el país. Retiro coordinado sin cargo.",
     "announcements": "Solo hoy: bombillas de alpaca a $19.000 · Virolas de alpaca cinceladas · Cuero repujado a mano · Envíos a todo el país",
@@ -16,7 +16,8 @@
     "promoText": "Bombilla de alpaca trenzada con pico curvo y detalles dorados. El precio vale únicamente hoy, hasta las 23:59.",
     "promoCode": "",
     "promoEnd": "2026-11-18T23:59",
-    "promoCat": "bombillas"
+    "promoCat": "bombillas",
+    "updatedAt": 1795014077002
   },
   "products": [
     {
@@ -67,5 +68,5 @@
       "updatedAt": 1795014012805
     }
   ],
-  "updatedAt": "2026-11-18T15:00:19.008Z"
+  "updatedAt": "2026-11-18T15:01:18.482Z"
 }
