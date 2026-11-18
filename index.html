@@ -1236,7 +1236,7 @@ function ghDetect(){
 const b64enc = str => { const b=new TextEncoder().encode(str); let s=''; for(let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(s); };
 const b64dec = b64 => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g,'')),c=>c.charCodeAt(0)));
 async function ghApi(path, opts={}){
-  const r=await fetch(`https://api.github.com/repos/${encodeURIComponent(G.owner)}/${encodeURIComponent(G.repo)}/${path}`,{...opts,headers:{Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(opts.body?{'Content-Type':'application/json'}:{})}});
+  const r=await fetch(`https://api.github.com/repos/${encodeURIComponent(G.owner)}/${encodeURIComponent(G.repo)}${path?'/'+path:''}`,{...opts,headers:{Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(opts.body?{'Content-Type':'application/json'}:{})}});
   if(!r.ok){ const e=new Error('GitHub '+r.status); e.status=r.status; throw e; }
   return r.json();
 }
@@ -1308,12 +1308,12 @@ function renderGhGate(){
 }
 async function handleGh(form){
   const fd=new FormData(form), err=$('#gateErr'), btn=form.querySelector('button[type=submit]');
-  const g={owner:String(fd.get('owner')).trim(), repo:String(fd.get('repo')).trim(), branch:'', token:String(fd.get('token')).trim()};
+  const g={owner:String(fd.get('owner')).trim().replace(/^@/,''), repo:String(fd.get('repo')).trim().replace(/\.git$/,''), branch:'', token:String(fd.get('token')).replace(/[^\x21-\x7e]/g,'')};
   btn.disabled=true; btn.textContent='Verificando…'; err.textContent='';
   try{ await ghLogin(g);
     try{ const v=JSON.stringify({owner:G.owner,repo:G.repo,branch:G.branch,token:G.token}); (fd.get('remember')?localStorage:sessionStorage).setItem('cm-gh',v); }catch(e){}
     toast('¡Bienvenido al panel!'); renderAdmin();
-  }catch(e){ S.isAdmin=false; err.textContent = e.status===401?'El token no es válido.': e.status===404||e.status===403?'No encontré el repositorio o el token no tiene acceso.':'No pude conectar con GitHub.'; form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); btn.disabled=false; btn.textContent='Entrar'; }
+  }catch(e){ S.isAdmin=false; err.textContent = e.status===401?'El token no es válido o está vencido. Copialo de nuevo.': e.status===404?`No encontré el repositorio “${g.owner}/${g.repo}”. Revisá que el nombre sea exacto y que el token tenga acceso a ese repositorio.`: e.status===403?'El token no tiene permiso. En GitHub, dale “Contents: Read and write” sobre este repositorio.': e.status?`GitHub respondió con un error (${e.status}). Probá de nuevo en un minuto.`:'No pude conectar con GitHub. Revisá tu internet o desactivá bloqueadores de anuncios en esta página.'; form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); btn.disabled=false; btn.textContent='Entrar'; }
 }
 async function startGithub(){
   S.mode='github'; $('#admFoot').classList.remove('hidden');
