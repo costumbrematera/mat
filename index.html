@@ -389,6 +389,7 @@ footer{padding:48px 0 36px;border-top:1px solid var(--linea);margin-top:40px}
 .gate p{color:rgba(36,22,13,.65);margin-bottom:20px;font-size:.95rem}
 .gate input{width:100%;height:52px;border:1.5px solid var(--linea);border-radius:14px;padding:0 16px;margin-bottom:10px;font-size:1rem;background:var(--crema);text-align:center;letter-spacing:.1em}
 .gate input:focus{outline:0;border-color:var(--yerba)}
+.gate input[type=checkbox]{width:18px;height:18px;margin:0;accent-color:var(--yerba)}
 .gate .btn{width:100%}
 .gate .err{color:var(--rojo);font-size:.86rem;min-height:1.3em;margin-bottom:8px}
 .shake{animation:shake .45s}
@@ -632,7 +633,7 @@ footer{padding:48px 0 36px;border-top:1px solid var(--linea);margin-top:40px}
         </div>
         <div class="foot-links" id="contactLinks"></div>
       </div>
-      <div class="copy">© <span id="yr"></span> <span class="sName">Costumbre Matera</span>. Precios en pesos argentinos.</div>
+      <div class="copy"><a href="#admin" id="admFoot" class="hidden" style="float:right;text-decoration:none;opacity:.7">🔒 Administrar</a>© <span id="yr"></span> <span class="sName">Costumbre Matera</span>. Precios en pesos argentinos.</div>
     </div>
   </footer>
 </main>
@@ -697,7 +698,7 @@ const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const money = n => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',maximumFractionDigits:0}).format(Number(n)||0);
 const num = v => { const n = Number(String(v).replace(/[^\d.,-]/g,'').replace(/\./g,'').replace(',','.')); return isFinite(n)?n:0; };
 const safeColor = c => /^#[0-9a-f]{3,8}$/i.test(c||'') ? c : '#6b3f22';
-const safeImg = s => (typeof s==='string' && (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(s) || /^fotos\/[a-z0-9-]+\.(jpe?g|png|webp)$/.test(s))) ? s : '';
+const safeImg = s => (typeof s==='string' && (/^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(s) || /^fotos\/[A-Za-z0-9_-]+\.(jpe?g|png|webp)$/.test(s))) ? s : '';
 const catName = c => (CATS.find(x=>x[0]===c)||[,'Otros'])[1];
 function shade(hex, amt){ hex=safeColor(hex).slice(1); if(hex.length===3) hex=hex.split('').map(x=>x+x).join('');
   let n=parseInt(hex.slice(0,6),16), r=(n>>16)+amt, g=(n>>8&255)+amt, b=(n&255)+amt;
@@ -763,7 +764,8 @@ function art(style, color){
   return `<svg viewBox="0 0 200 215" aria-hidden="true">${defs}${g}</svg>`;
 }
 const isCut = s => /\.(png|webp)$/i.test(s||'') || /^data:image\/(png|webp)/.test(s||'');
-function media(p, cls=''){ const img=safeImg(p.image); return img ? `<img class="${isCut(img)?'cut':'photo'} ${cls}" src="${img}" alt="${esc(p.name)}" loading="lazy">` : art(p.style||'calabaza', p.color); }
+const PREVIEW={};
+function media(p, cls=''){ const img=safeImg(p.image); return img ? `<img class="${isCut(img)?'cut':'photo'} ${cls}" src="${PREVIEW[img]||img}" alt="${esc(p.name)}" loading="lazy">` : art(p.style||'calabaza', p.color); }
 const bgOf = p => isCut(safeImg(p.image)) ? 'radial-gradient(circle at 50% 42%, #fffaf1 0%, #f6eedf 55%, #efe3cc 100%)' : bgFor(p.color);
 
 /* ================= Tienda ================= */
@@ -990,13 +992,16 @@ addEventListener('scroll',()=>$('#top').classList.toggle('scrolled',scrollY>10),
 /* ================= Panel de administración ================= */
 function renderAdmin(){
   const root=$('#adminRoot');
+  if(S.mode==='github' && !S.isAdmin){ renderGhGate(); return; }
   if(!S.isAdmin){
     root.innerHTML=`<div class="locked"><div class="locked-ico"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6b3f22" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
       <h2 style="margin-bottom:10px">Solo administradores</h2><p class="sec-sub" style="margin:0 auto 24px">${S.loaded?'Esta sección es solo para quienes administran la tienda.':'Verificando acceso…'}</p>
       <a class="btn btn-primary" href="#inicio">Volver a la tienda</a></div>`; return;
   }
+  if(S.mode!=='github'){
   if(!S.secureLoaded){ root.innerHTML=`<div class="locked"><div class="locked-ico"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#6b3f22" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><p class="sec-sub" style="margin:0 auto">Verificando acceso…</p></div>`; return; }
   if(!(S.secure&&S.secure.hash) || !unlocked){ renderGate(!(S.secure&&S.secure.hash)); return; }
+  }
   const P=S.products, active=P.filter(p=>p.active!==false), out=P.filter(p=>!(p.stock>0));
   const value=P.reduce((s,p)=>s+(Number(p.price)||0)*(Number(p.stock)||0),0);
   root.innerHTML = `<div class="adm-head"><div><span class="eyebrow">Panel de administración</span><h2 style="margin-top:10px">Hola, <em>administrador</em></h2></div>
@@ -1079,11 +1084,11 @@ function renderSettings(){
     <div class="field full"><label>Título</label><input name="promoTitle" value="${esc(st.promoTitle)}" maxlength="70"></div>
     <div class="field full"><label>Texto</label><input name="promoText" value="${esc(st.promoText)}" maxlength="160"></div>
     <div class="full"><button class="btn btn-primary" type="submit">Guardar ajustes</button></div></form>
-    <form class="form" id="pwForm" style="border-top:1px solid var(--linea)">
+    ${S.mode==='github'?`<div class="form" style="border-top:1px solid var(--linea)"><div class="sep" style="border:0;padding-top:0">Acceso al panel</div><p class="full" style="color:rgba(36,22,13,.65);font-size:.92rem">Estás conectado a <b>${esc(G.owner)}/${esc(G.repo)}</b>. Cada cambio se guarda en el archivo <code>catalogo.json</code> del repositorio y aparece en la tienda pública en 1 o 2 minutos. Para cambiar el acceso, generá un token nuevo en GitHub y borrá el anterior.</p></div>`:`<form class="form" id="pwForm" style="border-top:1px solid var(--linea)">
     <div class="sep" style="border:0;padding-top:0">Cambiar contraseña del panel</div>
     <div class="field"><label>Contraseña actual</label><input type="password" name="cur" autocomplete="current-password" required></div>
     <div class="field"><label>Nueva contraseña</label><input type="password" name="pw" autocomplete="new-password" minlength="6" required></div>
-    <div class="full"><button class="btn btn-ghost" type="submit">Cambiar contraseña</button></div></form>`;
+    <div class="full"><button class="btn btn-ghost" type="submit">Cambiar contraseña</button></div></form>`}`;
 }
 function openEditor(id){
   const src = id ? S.products.find(p=>p.id===id) : null;
@@ -1143,6 +1148,8 @@ function compress(file){
     let q=.82, out=cv.toDataURL('image/jpeg',q); while(out.length>180000 && q>.4){ q-=.1; out=cv.toDataURL('image/jpeg',q); } res(out); }; im.src=r.result; }; r.readAsDataURL(file); });
 }
 function errMsg(e){ const c=e&&e.code;
+  if(e&&e.status) return (e.status===401||e.status===403||e.status===404)?'El token no tiene permiso para guardar en el repositorio':e.status===409||e.status===422?'Otro cambio se guardó al mismo tiempo, probá de nuevo':'GitHub no respondió, probá de nuevo';
+  if(e&&e.name==='TypeError') return 'Sin conexión con GitHub';
   return c==='offline'?'La base de datos no está disponible ahora': c==='invalid_argument'?'No tenés permiso para guardar o el dato es inválido': c==='quota_exceeded'?'Se llenó el espacio: borrá productos o fotos': c==='resource_exhausted'?'Demasiados cambios seguidos, esperá unos segundos':'No se pudo guardar, probá de nuevo'; }
 async function patch(id, data, el){
   if(!S.db){ toast(errMsg({code:'offline'})); return; }
@@ -1179,7 +1186,7 @@ document.addEventListener('click',e=>{
   const rm=t.closest('[data-rm]'); if(rm){ delete S.cart[rm.dataset.rm]; saveCart(); renderCart(); return; }
   // admin
   if(!S.isAdmin) return;
-  if(t.closest('[data-logout]')){ unlocked=false; try{ sessionStorage.removeItem('cebada-adm'); }catch(e){} toast('Panel cerrado'); renderAdmin(); return; }
+  if(t.closest('[data-logout]')){ unlocked=false; try{ sessionStorage.removeItem('cebada-adm'); }catch(e){} if(S.mode==='github') ghLogout(); toast('Panel cerrado'); renderAdmin(); return; }
   if(!unlocked) return;
   if(t.closest('[data-new]')){ openEditor(null); return; }
   const ed=t.closest('[data-edit]'); if(ed){ openEditor(ed.dataset.edit); return; }
@@ -1201,6 +1208,7 @@ document.addEventListener('change',e=>{
   if(v===Number(p[f])) return; patch(p.id,{[f]:v}, el);
 });
 document.addEventListener('submit',async e=>{
+  if(e.target.id==='ghForm'){ e.preventDefault(); handleGh(e.target); return; }
   if(e.target.id==='gateForm'){ e.preventDefault(); if(S.isAdmin) handleGate(e.target); return; }
   if(e.target.id==='pwForm'){ e.preventDefault(); const fd=new FormData(e.target);
     if((await sha(S.secure.salt+fd.get('cur')))!==S.secure.hash){ toast('La contraseña actual no es correcta'); return; }
@@ -1213,6 +1221,108 @@ document.addEventListener('submit',async e=>{
   try{ if(!S.db) throw {code:'offline'}; await S.db.doc('config/store').set({...S.settings,...data,updatedAt:Date.now()}); toast('Ajustes guardados'); }
   catch(err){ toast(errMsg(err)); } btn.disabled=false;
 });
+
+/* ================= Modo GitHub Pages =================
+   Fuera de Claude, la tienda lee catalogo.json del mismo sitio y el panel guarda
+   los cambios en ese archivo del repositorio usando la API de GitHub. */
+const GH_CONFIG = { owner:'', repo:'', branch:'' }; // opcional: completalo si usás un dominio propio
+let G = { owner:'', repo:'', branch:'', token:'' };
+function ghDetect(){
+  const g={...GH_CONFIG}; const host=location.hostname;
+  if(!g.owner && host.endsWith('.github.io')){ g.owner=host.split('.')[0]; const seg=location.pathname.split('/').filter(Boolean)[0]; g.repo = (seg && !seg.includes('.')) ? seg : host; }
+  try{ const s=JSON.parse(localStorage.getItem('cm-gh')||sessionStorage.getItem('cm-gh')||'null'); if(s) Object.assign(g,s); }catch(e){}
+  return g;
+}
+const b64enc = str => { const b=new TextEncoder().encode(str); let s=''; for(let i=0;i<b.length;i+=0x8000) s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000)); return btoa(s); };
+const b64dec = b64 => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g,'')),c=>c.charCodeAt(0)));
+async function ghApi(path, opts={}){
+  const r=await fetch(`https://api.github.com/repos/${encodeURIComponent(G.owner)}/${encodeURIComponent(G.repo)}/${path}`,{...opts,headers:{Authorization:'Bearer '+G.token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28',...(opts.body?{'Content-Type':'application/json'}:{})}});
+  if(!r.ok){ const e=new Error('GitHub '+r.status); e.status=r.status; throw e; }
+  return r.json();
+}
+async function ghGetCatalog(){
+  try{ const j=await ghApi(`contents/catalogo.json?ref=${encodeURIComponent(G.branch)}&t=${Date.now()}`); return {cat:JSON.parse(b64dec(j.content)), sha:j.sha}; }
+  catch(e){ if(e.status===404) return {cat:{store:{...DEFAULT_SETTINGS}, products:DEMO.map(p=>({...p}))}, sha:null}; throw e; }
+}
+function applyCatalog(cat){
+  S.settings={...DEFAULT_SETTINGS, ...(cat.store||{})};
+  S.products=(cat.products||[]).filter(p=>p&&p.id).map(x=>({...x, id:String(x.id), price:Number(x.price)||0, oldPrice:Number(x.oldPrice)||0, stock:Number(x.stock)||0}));
+  S.loaded=true; S.live=true;
+  let ch=false; for(const id in S.cart){ if(!S.products.find(p=>p.id===id)){ delete S.cart[id]; ch=true; } } if(ch) saveCart();
+  renderAll();
+}
+let ghQueue=Promise.resolve();
+function ghMutate(fn, msg){
+  const run=ghQueue.then(async()=>{
+    const {cat,sha}=await ghGetCatalog(); cat.products=cat.products||[]; cat.store=cat.store||{};
+    fn(cat); cat.updatedAt=new Date().toISOString();
+    await ghApi('contents/catalogo.json',{method:'PUT',body:JSON.stringify({message:msg,content:b64enc(JSON.stringify(cat,null,2)+'\n'),branch:G.branch,...(sha?{sha}:{})})});
+    applyCatalog(cat);
+  });
+  ghQueue=run.catch(()=>{}); return run;
+}
+async function ghUploadImage(id, dataUrl){
+  const m=/^data:image\/(jpe?g|png|webp);base64,(.+)$/.exec(dataUrl); if(!m) return '';
+  const path=`fotos/${String(id).replace(/[^A-Za-z0-9_-]/g,'')}-${Date.now().toString(36)}.${m[1]==='jpeg'?'jpg':m[1]}`;
+  await ghApi('contents/'+path,{method:'PUT',body:JSON.stringify({message:'Foto de producto',content:m[2],branch:G.branch})});
+  PREVIEW[path]=dataUrl; return path;
+}
+const ghDb = {
+  collection:c=>({ doc:id=>ghDb.doc(c+'/'+(id||('p'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)))) }),
+  doc:path=>{ const [c,id]=path.split('/'); return {
+    set: async data=>{ data={...data};
+      if(c==='products'){ if(typeof data.image==='string' && data.image.startsWith('data:')) data.image=await ghUploadImage(id,data.image);
+        return ghMutate(cat=>{ const row={id,...data}, i=cat.products.findIndex(p=>p.id===id); if(i>=0) cat.products[i]=row; else cat.products.push(row); }, (data.name||'Producto')+': guardado desde el panel'); }
+      if(path==='config/store') return ghMutate(cat=>{ cat.store={...data}; }, 'Ajustes de la tienda');
+      throw {code:'invalid_argument'}; },
+    update: async data=>ghMutate(cat=>{ const p=cat.products.find(p=>p.id===id); if(!p) throw {code:'invalid_argument'}; Object.assign(p,data); }, 'Producto actualizado desde el panel'),
+    delete: async()=>ghMutate(cat=>{ cat.products=cat.products.filter(p=>p.id!==id); }, 'Producto eliminado desde el panel')
+  }; }
+};
+async function ghLogin(g){
+  G={...g}; const j=await ghApi(''); 
+  if(j.permissions && j.permissions.push===false){ const e=new Error('sin permiso'); e.status=403; throw e; }
+  G.branch=g.branch||j.default_branch||'main';
+  S.isAdmin=true; unlocked=true; S.db=ghDb;
+  $('#adminLink').classList.remove('hidden'); $('#adminLinkM').classList.remove('hidden');
+  applyCatalog((await ghGetCatalog()).cat);
+}
+function ghLogout(){
+  S.isAdmin=false; S.db=null; G.token='';
+  try{ localStorage.removeItem('cm-gh'); sessionStorage.removeItem('cm-gh'); }catch(e){}
+  $('#adminLink').classList.add('hidden'); $('#adminLinkM').classList.add('hidden');
+}
+function renderGhGate(){
+  const g=ghDetect();
+  $('#adminRoot').innerHTML=`<form class="gate" id="ghForm" style="max-width:480px">
+    <div class="locked-ico" style="margin:0 auto"><svg width="40" height="40" viewBox="0 0 24 24" fill="#6b3f22"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .6 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9V21c0 .3.2.6.7.5A10 10 0 0 0 12 2z"/></svg></div>
+    <h2>Panel de administración</h2>
+    <p>Ingresá con tu token de GitHub. Solo quien tenga un token con permiso sobre el repositorio puede entrar y guardar cambios.</p>
+    <div style="display:flex;gap:8px"><input name="owner" placeholder="Usuario de GitHub" value="${esc(g.owner)}" required style="letter-spacing:0"><input name="repo" placeholder="Repositorio" value="${esc(g.repo)}" required style="letter-spacing:0"></div>
+    <input type="password" name="token" placeholder="Token (github_pat_…)" autocomplete="off" required style="letter-spacing:0">
+    <label class="check" style="justify-content:center;margin:4px 0 10px"><input type="checkbox" name="remember" checked> Recordar en este dispositivo</label>
+    <div class="err" id="gateErr"></div>
+    <button class="btn btn-primary" type="submit">Entrar</button>
+    <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener" style="display:block;margin-top:14px;font-size:.88rem">¿No tenés token? Crealo acá</a>
+    <a href="#inicio" style="display:block;margin-top:8px;font-size:.88rem">Volver a la tienda</a></form>`;
+}
+async function handleGh(form){
+  const fd=new FormData(form), err=$('#gateErr'), btn=form.querySelector('button[type=submit]');
+  const g={owner:String(fd.get('owner')).trim(), repo:String(fd.get('repo')).trim(), branch:'', token:String(fd.get('token')).trim()};
+  btn.disabled=true; btn.textContent='Verificando…'; err.textContent='';
+  try{ await ghLogin(g);
+    try{ const v=JSON.stringify({owner:G.owner,repo:G.repo,branch:G.branch,token:G.token}); (fd.get('remember')?localStorage:sessionStorage).setItem('cm-gh',v); }catch(e){}
+    toast('¡Bienvenido al panel!'); renderAdmin();
+  }catch(e){ S.isAdmin=false; err.textContent = e.status===401?'El token no es válido.': e.status===404||e.status===403?'No encontré el repositorio o el token no tiene acceso.':'No pude conectar con GitHub.'; form.classList.remove('shake'); void form.offsetWidth; form.classList.add('shake'); btn.disabled=false; btn.textContent='Entrar'; }
+}
+async function startGithub(){
+  S.mode='github'; $('#admFoot').classList.remove('hidden');
+  const g=ghDetect();
+  if(g.token && g.owner && g.repo){ try{ await ghLogin(g); return; }catch(e){ ghLogout(); } }
+  try{ const r=await fetch('catalogo.json?v='+Date.now(),{cache:'no-store'}); if(!r.ok) throw 0; applyCatalog(await r.json()); }
+  catch(e){ useDemo(''); }
+  if(location.hash==='#admin') renderAdmin();
+}
 
 /* ================= Rutas ================= */
 function route(){
@@ -1237,7 +1347,8 @@ function useDemo(reason){
 }
 (async()=>{
   const C = window.claude;
-  if(!C || typeof C.use!=='function'){ useDemo(''); return; }
+  if(!C || typeof C.use!=='function'){ startGithub(); return; }
+  S.mode='claude';
   let db=null, user=null;
   try{ [db,user] = await Promise.all([C.use('db'), C.use('user')]); }catch(e){}
   S.user=user;
