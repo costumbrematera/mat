@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>(function(d){d.classList.add("js");try{if(location.hash!=="#/admin"&&!sessionStorage.getItem("cm_intro")&&!matchMedia("(prefers-reduced-motion: reduce)").matches)d.classList.add("intro-pending")}catch(e){}})(document.documentElement);</script>
 </head>
 <body>
 <style>
@@ -190,41 +191,6 @@ textarea.field { min-height: 96px; resize: vertical; }
 }
 .cart-count[hidden] { display: none; }
 .cart-btn { position: relative; }
-
-/* ---------- Hero ---------- */
-.hero {
-  padding-block: clamp(3rem, 8vw, 7rem) clamp(2rem, 5vw, 4rem);
-  display: grid;
-  gap: 2rem;
-  align-items: end;
-}
-.hero h1 {
-  margin: 0.75rem 0 0;
-  font-family: var(--serif);
-  font-weight: 400;
-  font-size: clamp(2.6rem, 7.2vw, 6.4rem);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
-}
-.hero h1 em { font-style: italic; color: var(--muted); }
-.hero__aside {
-  border-left: 1px solid var(--line);
-  padding-left: 1.25rem;
-  max-width: 65ch;
-}
-.hero__aside p { margin: 0; color: var(--muted); }
-.hero__meta {
-  margin-top: 1rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1.25rem;
-  font-family: var(--mono);
-  font-size: 0.75rem;
-  color: var(--muted);
-}
-@media (min-width: 900px) {
-  .hero { grid-template-columns: 1.4fr 1fr; }
-}
 
 /* ---------- Filtros de sección ---------- */
 .toolbar {
@@ -630,6 +596,454 @@ textarea.field { min-height: 96px; resize: vertical; }
 .dialog[open] { animation: pop 300ms var(--ease); }
 @keyframes pop { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
+/* ==========================================================
+   Movimiento: revelados, marquee, brillo en fotos, progreso
+   ========================================================== */
+.progress {
+  position: fixed; left: 0; top: 0; height: 2px; width: 100%;
+  background: var(--accent); transform-origin: 0 50%; transform: scaleX(0);
+  z-index: 100; pointer-events: none;
+}
+.topbar { transition: box-shadow 350ms var(--ease), background-color 350ms var(--ease); }
+.topbar.is-scrolled { box-shadow: 0 10px 28px -22px rgba(28, 27, 24, 0.45); background: rgba(244, 240, 232, 0.97); }
+
+/* Revelado al hacer scroll */
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 800ms var(--ease), transform 800ms var(--ease); }
+.reveal.is-in { opacity: 1; transform: none; }
+
+/* Marquee de secciones */
+.marquee { overflow: hidden; background: var(--surface); border-bottom: 1px solid var(--line); padding-block: 0.9rem; }
+.marquee__track {
+  display: flex; gap: 2.5rem; width: max-content; padding-left: 2.5rem;
+  font-family: var(--serif); font-style: italic; font-size: clamp(1.2rem, 2.4vw, 1.6rem); color: var(--muted);
+  animation: marquee 46s linear infinite;
+}
+.marquee__track span { white-space: nowrap; display: inline-flex; align-items: center; gap: 2.5rem; }
+.marquee__track span::after { content: "✦"; font-style: normal; font-size: 0.7rem; color: var(--line); }
+.marquee:hover .marquee__track { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* Brillo al pasar sobre la foto */
+.card__media::before {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, 0.4) 50%, transparent 65%);
+  transform: translateX(-100%); transition: transform 1000ms var(--ease);
+}
+.card:hover .card__media::before { transform: translateX(100%); }
+.card:active { transform: scale(0.99); }
+.card__tag { z-index: 2; }
+
+/* Chips y botones */
+.chip[aria-pressed="true"] { animation: chipPop 380ms var(--ease); }
+@keyframes chipPop { 0% { transform: scale(0.94); } 60% { transform: scale(1.03); } 100% { transform: none; } }
+.btn { position: relative; overflow: hidden; }
+.btn::after {
+  content: ""; position: absolute; inset: 0; background: rgba(255, 255, 255, 0.14);
+  transform: translateX(-101%); transition: transform 500ms var(--ease);
+}
+.btn:hover::after { transform: translateX(0); }
+
+/* Carrito */
+.cart-count.bump { animation: bump 520ms var(--ease); }
+@keyframes bump { 30% { transform: scale(1.4); } 60% { transform: scale(0.92); } 100% { transform: none; } }
+.cart__line { animation: rise 420ms var(--ease) both; }
+.cart__line:nth-child(2) { animation-delay: 60ms; }
+.cart__line:nth-child(3) { animation-delay: 120ms; }
+.cart__line:nth-child(n+4) { animation-delay: 180ms; }
+.cart__line img, .cart__thumb { transition: transform 500ms var(--ease); }
+.cart__line:hover img { transform: scale(1.05); }
+.cart__row--total { transition: color 300ms var(--ease); }
+
+/* Imagen del modal entra con zoom suave */
+.sheet__media img { animation: settle 900ms var(--ease) both; }
+@keyframes settle { from { transform: scale(1.08); opacity: 0.4; } to { transform: none; opacity: 1; } }
+
+/* Se detiene todo cuando el usuario lo pide */
+@media (prefers-reduced-motion: reduce) {
+  .marquee__track { animation: none; }
+  .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ==========================================================
+   Marca animada: logo, emblema, intro, "a pedido", vuelo al carrito
+   ========================================================== */
+.ln path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: draw 1.1s var(--ease) forwards;
+  animation-delay: calc(var(--d) * 140ms + 200ms);
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* Núcleo circular negro del logo */
+.core {
+  background: #080808;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.core svg { width: 80%; height: 80%; }
+
+/* Logo chico en el encabezado */
+.brand__mark { padding: 0; overflow: hidden; }
+.brand__mark svg { width: 100%; height: 100%; display: block; }
+.brand:hover .brand__mark { transform: rotate(-8deg); }
+.brand__mark { transition: transform 500ms var(--ease), opacity 220ms var(--ease); }
+
+/* Aviso "a pedido" */
+.pedido {
+  background: var(--accent); color: var(--accent-ink);
+  font-size: 0.88rem; padding: 0.7rem 0;
+}
+.pedido__inner { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.pedido__dot { width: 8px; height: 8px; border-radius: 50%; background: #9fd4a6; position: relative; flex: 0 0 auto; }
+.pedido__dot::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 1px solid #9fd4a6; animation: ping 2s var(--ease) infinite; }
+@keyframes ping { from { transform: scale(0.4); opacity: 1; } to { transform: scale(1.8); opacity: 0; } }
+.pedido strong { font-weight: 700; letter-spacing: 0.02em; }
+
+.a-pedido {
+  margin: 0; font-family: var(--mono); font-size: 0.75rem; color: var(--accent);
+  padding: 0.55rem 0.75rem; border: 1px solid var(--accent); border-radius: var(--radius);
+  display: inline-block; align-self: flex-start;
+}
+.cart-pedido {
+  margin: 0; padding: 0.9rem 1.25rem; font-size: 0.85rem; color: var(--muted);
+  border-bottom: 1px solid var(--line); background: var(--surface);
+}
+.cart-pedido strong { color: var(--ink); }
+
+/* Burbuja que vuela al carrito */
+.fly {
+  position: fixed; left: 0; top: 0; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--accent); z-index: 300; pointer-events: none;
+  box-shadow: 0 0 0 4px rgba(35, 57, 42, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pedido__dot::after { animation: none !important; }
+  .ln path { stroke-dashoffset: 0; animation: none; }
+}
+
+/* ==========================================================
+   Hero "La ronda": logo al centro, productos girando alrededor,
+   intro que se contrae hasta el logo y logo que viaja al encabezado.
+   ========================================================== */
+
+/* Cortina negra antes de que arranque la intro (evita un parpadeo del contenido) */
+.intro-pending body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: #080808;
+  animation: pendingOut 400ms ease 4s forwards; /* seguro por si algo falla */
+}
+@keyframes pendingOut { to { opacity: 0; visibility: hidden; } }
+
+.intro { position: fixed; inset: 0; z-index: 200; background: #080808; cursor: pointer; }
+.intro__core { position: absolute; }
+
+/* ---------- Estructura ---------- */
+.hx {
+  position: relative;
+  height: 175vh;
+  height: 175svh;
+  margin-top: -72px; /* el hero arranca debajo del encabezado */
+}
+.hx__stage {
+  position: sticky;
+  top: 0;
+  z-index: 45; /* por encima del encabezado para que el logo pueda acomodarse ahí */
+  height: 100vh;
+  height: 100svh;
+  padding-top: 72px;
+  overflow: hidden;
+  pointer-events: none;
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+.hx__stage a,
+.hx__stage button,
+.hx__ring { pointer-events: auto; }
+.hx.is-leaving .hx__stage,
+.hx.is-leaving .hx__stage * { pointer-events: none; }
+/* lo que sigue al hero sube por debajo mientras el logo se acomoda en el encabezado */
+.hx + * { margin-top: -55vh; margin-top: -55svh; }
+
+/* ---------- Tipografía ---------- */
+.hx__eyebrow,
+.hx__desc {
+  position: absolute;
+  top: calc(72px + clamp(0.9rem, 2.6svh, 1.6rem));
+  margin: 0;
+  z-index: 2;
+}
+.hx__eyebrow { left: max(1.25rem, calc((100% - 1240px) / 2)); }
+.hx__desc {
+  right: max(1.25rem, calc((100% - 1240px) / 2));
+  max-width: 30ch;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--muted);
+  display: none;
+}
+@media (min-width: 900px) { .hx__desc { display: block; } }
+.hx__eyebrow > span,
+.hx__desc > span { display: block; }
+
+.hx__title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(3.2rem, min(15vw, 19svh), 10.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+}
+.hx__line {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  overflow: hidden;
+  padding: 0.04em 0.08em 0.14em;
+  white-space: nowrap;
+  will-change: transform;
+}
+.hx__line > span { display: block; }
+@media (min-width: 720px) { .hx__title { font-size: clamp(3.2rem, min(12.5vw, 19svh), 10.5rem); } }
+.hx__line--a {
+  top: calc(72px + clamp(2.2rem, 6svh, 4rem));
+  left: max(0.9rem, calc((100% - 1240px) / 2 - 0.08em));
+}
+.hx__line--b {
+  bottom: clamp(4.5rem, 12svh, 7rem);
+  right: max(0.9rem, calc((100% - 1240px) / 2 - 0.08em));
+}
+.hx__line--b em { font-style: italic; color: var(--muted); }
+
+/* ---------- Ronda ---------- */
+.hx__ring {
+  position: relative;
+  z-index: 3;
+  grid-row: 1;
+  display: grid;
+  place-items: center;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.hx__ring.is-drag { cursor: grabbing; }
+.hx__orbit { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+
+.hx__dock {
+  position: relative;
+  z-index: 5;
+  width: clamp(130px, min(40vw, 30svh), 250px);
+  aspect-ratio: 1;
+  will-change: transform;
+}
+.hx__core {
+  width: 100%;
+  height: 100%;
+  box-shadow: 0 34px 60px -30px rgba(8, 8, 8, 0.6);
+  transform: scale(0.55);
+  opacity: 0;
+  transition: transform 1.1s var(--ease), opacity 600ms var(--ease);
+}
+.hx.is-core .hx__core { transform: none; opacity: 1; }
+
+.hx__item {
+  --w: clamp(70px, min(22vw, 17svh), 138px);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--w);
+  aspect-ratio: 4 / 5;
+  margin: calc(var(--w) * -0.625) 0 0 calc(var(--w) * -0.5);
+  padding: 0;
+  border: 0;
+  background: none;
+  opacity: 0;
+  cursor: pointer;
+  will-change: transform, opacity;
+}
+@media (min-width: 720px) { .hx__item { --w: clamp(70px, min(14vw, 17svh), 138px); } }
+.hx__pic {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--surface);
+  box-shadow: 0 20px 32px -24px rgba(28, 27, 24, 0.7);
+  transition: border-color 250ms var(--ease);
+}
+.hx__pic img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 600ms var(--ease);
+  -webkit-user-drag: none;
+}
+.hx__ph {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 2rem;
+  color: rgba(28, 27, 24, 0.3);
+}
+.hx__item:hover .hx__pic { border-color: var(--ink); }
+.hx__item:hover .hx__pic img { transform: scale(1.07); }
+.hx__item:focus-visible { outline: none; }
+.hx__item:focus-visible .hx__pic { outline: 2px solid var(--accent); outline-offset: 3px; }
+.hx__tag {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 0.55rem);
+  padding: 0.35rem 0.5rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  display: none;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  line-height: 1.4;
+  text-align: left;
+  color: var(--ink);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: opacity 300ms var(--ease), transform 300ms var(--ease);
+}
+.hx__tag b { display: block; font-weight: 500; color: var(--muted); }
+@media (min-width: 720px) { .hx__tag { display: block; } }
+.hx__item.is-front .hx__tag { opacity: 1; transform: none; }
+
+/* Vapor del mate */
+.steam path {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: steam 3.4s ease-in-out infinite;
+}
+.steam path:nth-child(2) { animation-delay: 1.1s; }
+.steam path:nth-child(3) { animation-delay: 2.2s; }
+@keyframes steam {
+  0% { opacity: 0; transform: translateY(8px) scaleY(0.5); }
+  35% { opacity: 0.85; }
+  100% { opacity: 0; transform: translateY(-16px) scaleY(1.15); }
+}
+
+/* ---------- Pie del hero ---------- */
+.hx__foot {
+  position: relative;
+  z-index: 4;
+  grid-row: 2;
+  width: var(--wrap);
+  margin-inline: auto;
+  padding-block: 0.6rem 1rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.hx__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hx__dot { position: relative; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.hx__dot::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  animation: ping 2s var(--ease) infinite;
+}
+.hx__meta { display: none; gap: 1.5rem; font-family: var(--mono); font-size: 0.72rem; color: var(--muted); }
+.hx__meta b { font-family: var(--serif); font-size: 1.35rem; font-weight: 500; color: var(--ink); margin-right: 0.2rem; }
+@media (min-width: 720px) { .hx__meta { display: flex; } }
+.hx__cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 44px;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: color 200ms var(--ease);
+}
+.hx__cue:hover { color: var(--accent); }
+.hx__cue:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.hx__cue i { position: relative; width: 1px; height: 28px; overflow: hidden; background: var(--line); }
+.hx__cue i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: translateY(-100%);
+  animation: cue 1.8s var(--ease) infinite;
+}
+@keyframes cue { 0% { transform: translateY(-100%); } 55% { transform: none; } 100% { transform: translateY(100%); } }
+
+/* ---------- Entrada ---------- */
+.js .hx__line > span { transform: translateY(110%); letter-spacing: 0.14em; }
+.js .hx__eyebrow > span,
+.js .hx__desc > span,
+.js .hx__foot > * { opacity: 0; transform: translateY(10px); }
+.hx.is-ready .hx__line > span {
+  transform: none;
+  letter-spacing: -0.035em;
+  transition: transform 1.3s var(--ease), letter-spacing 1.8s var(--ease);
+}
+.hx.is-ready .hx__line--b > span { transition-delay: 120ms; }
+.hx.is-ready .hx__eyebrow > span,
+.hx.is-ready .hx__desc > span,
+.hx.is-ready .hx__foot > * {
+  opacity: 1;
+  transform: none;
+  transition: opacity 800ms var(--ease) 500ms, transform 800ms var(--ease) 500ms;
+}
+.hx.is-ready .hx__foot > :nth-child(2) { transition-delay: 620ms; }
+.hx.is-ready .hx__foot > :nth-child(3) { transition-delay: 740ms; }
+/* si el script no llega a correr, igual se ve todo */
+.js .hx:not(.is-ready) .hx__line > span,
+.js .hx:not(.is-ready) .hx__foot > * { animation: hxFallback 1ms 5s forwards; }
+@keyframes hxFallback { to { transform: none; opacity: 1; letter-spacing: -0.035em; } }
+
+/* Mientras el logo grande está en el hero, el del encabezado se oculta */
+body.hx-docking .brand__mark { opacity: 0; }
+.brand__name { transition: transform 500ms var(--ease); }
+body.hx-docking .brand__name { transform: translateX(-56px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hx { height: auto; }
+  .hx + * { margin-top: 0; }
+  .hx__stage { position: relative; min-height: 100svh; }
+  .js .hx__line > span,
+  .js .hx__eyebrow > span,
+  .js .hx__desc > span,
+  .js .hx__foot > *,
+  .hx__core { transform: none !important; opacity: 1 !important; letter-spacing: -0.035em; }
+  .steam path { animation: none; opacity: 0.6; }
+  .hx__dot::after, .hx__cue i::after { animation: none; }
+}
+
 
 body.is-admin .public-root { display: none; }
 body:not(.is-admin) .admin-root { display: none; }
@@ -653,14 +1067,23 @@ body:not(.is-admin) .admin-root { display: none; }
   </header>
 
   <main>
-    <section class="wrap hero" aria-labelledby="titulo">
-      <div>
-        <span class="eyebrow">Catálogo mayorista y minorista</span>
-        <h1 id="titulo">Mates con <em>costumbre</em>, hechos para durar.</h1>
-      </div>
-      <div class="hero__aside">
-        <p>Mates, bombillas, bombillones, termos y canastas. Elegí tus modelos, armá tu pedido y coordinamos la entrega.</p>
-        <div class="hero__meta" id="heroMeta"></div>
+    <section class="hx" id="hx" aria-labelledby="titulo">
+      <div class="hx__stage" id="hxStage">
+        <p class="hx__eyebrow eyebrow"><span>Catálogo mayorista y minorista</span></p>
+        <p class="hx__desc"><span>Mates, bombillas, termos y canastas. Elegí tus modelos, armá tu pedido y coordinamos la entrega.</span></p>
+        <h1 class="hx__title" id="titulo">
+          <span class="hx__line hx__line--a"><span>Mates con</span></span>
+          <span class="hx__line hx__line--b"><span><em>costumbre</em></span></span>
+        </h1>
+        <div class="hx__ring" id="hxRing">
+          <div class="hx__orbit" id="hxOrbit" aria-label="Productos destacados"></div>
+          <div class="hx__dock" id="hxDock"><div class="hx__core core" id="hxCore" aria-hidden="true"></div></div>
+        </div>
+        <div class="hx__foot">
+          <span class="hx__pill"><span class="hx__dot" aria-hidden="true"></span>Trabajamos a pedido</span>
+          <div class="hx__meta" id="heroMeta"></div>
+          <a class="hx__cue" href="#catalog"><span>Ver catálogo</span><i aria-hidden="true"></i></a>
+        </div>
       </div>
     </section>
 
@@ -1091,7 +1514,10 @@ window.CM_CONFIG = {
   function renderHero() {
     const updated = state.updatedAt ? new Date(state.updatedAt) : null;
     const avail = state.items.filter((i) => i.available).length;
-    $("heroMeta").innerHTML = `<span>${state.items.length} modelos</span><span>${avail} disponibles</span>`;
+    const secs = new Set(state.items.map((i) => i.section)).size;
+    const meta = $("heroMeta");
+    if (meta) meta.innerHTML = [[state.items.length, "modelos"], [avail, "disponibles"], [secs, "secciones"]]
+      .map(([n, label]) => `<span><b data-count="${n}">${n}</b> ${label}</span>`).join("");
     $("updated").textContent = updated ? `Actualizado ${updated.toLocaleDateString("es-AR")}` : "";
   }
 
@@ -1252,6 +1678,7 @@ window.CM_CONFIG = {
 
   /* ---------- Eventos ---------- */
   function bind() {
+    window.CM_openProduct = openProduct;
     $("chips").addEventListener("click", (e) => {
       const b = e.target.closest("[data-sec]");
       if (!b) return;
@@ -1329,9 +1756,460 @@ window.CM_CONFIG = {
     renderChips();
     renderGrid();
     renderCartCount();
+    window.CM_ITEMS = state.items;
+    document.dispatchEvent(new CustomEvent("cm:catalog", { detail: state.items }));
   }
 
   if (location.hash !== "#/admin") { bind(); load(); }
+})();
+
+</script>
+<script>
+/* Movimiento de la página pública: progreso, revelados, marquee, rebote de carrito. */
+(function () {
+  if (location.hash === "#/admin") return;
+  const $ = (id) => document.getElementById(id);
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Barra de progreso de lectura
+  const bar = document.createElement("div");
+  bar.className = "progress";
+  document.body.appendChild(bar);
+
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const max = document.documentElement.scrollHeight - innerHeight;
+      bar.style.transform = `scaleX(${max > 0 ? scrollY / max : 0})`;
+      document.querySelector(".topbar").classList.toggle("is-scrolled", scrollY > 8);
+      ticking = false;
+    });
+  }
+  addEventListener("scroll", onScroll, { passive: true });
+
+  // Revelar secciones al entrar en pantalla
+  const io = "IntersectionObserver" in window
+    ? new IntersectionObserver((entries) => {
+        entries.forEach((en) => {
+          if (en.isIntersecting) { en.target.classList.add("is-in"); io.unobserve(en.target); }
+        });
+      }, { rootMargin: "0px 0px -8% 0px", threshold: 0.05 })
+    : null;
+
+  function watch(el) {
+    if (!io || reduce) return el.classList.add("is-in");
+    el.classList.add("reveal");
+    io.observe(el);
+  }
+
+  // Cuando se renderiza el catálogo, revelar encabezados
+  const catalog = $("catalog");
+  if (catalog) {
+    new MutationObserver(() => {
+      catalog.querySelectorAll(".section-head, .empty").forEach((el) => {
+        if (!el.classList.contains("reveal") && !el.classList.contains("is-in")) watch(el);
+      });
+    }).observe(catalog, { childList: true });
+  }
+
+  // Marquee con las secciones (se arma desde los filtros)
+  const chips = $("chips");
+  if (chips) {
+    let built = false;
+    const build = () => {
+      if (built || !chips.children.length) return;
+      built = true;
+      const names = [...chips.querySelectorAll("[data-sec]")].map((b) => b.dataset.sec).filter((s) => s !== "Todas");
+      const wrap = document.createElement("div");
+      wrap.className = "marquee";
+      wrap.setAttribute("aria-hidden", "true");
+      const row = names.map((n) => `<span>${n.replace(/</g, "&lt;")}</span>`).join("");
+      wrap.innerHTML = `<div class="marquee__track">${row}${row}</div>`;
+      const hero = document.querySelector(".hx");
+      hero.insertAdjacentElement("afterend", wrap);
+    };
+    new MutationObserver(build).observe(chips, { childList: true });
+    build();
+  }
+
+  // Rebote del contador del carrito
+  const count = $("cartCount");
+  if (count) {
+    new MutationObserver(() => {
+      count.classList.remove("bump");
+      void count.offsetWidth;
+      count.classList.add("bump");
+    }).observe(count, { childList: true, characterData: true, subtree: true });
+  }
+
+  onScroll();
+})();
+
+/* Marca animada: logo SVG (dibujado de la línea del logo original), intro, aviso "a pedido", vuelo al carrito. */
+(function () {
+  if (location.hash === "#/admin") return;
+  const $ = (id) => document.getElementById(id);
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Dibujo de línea del logo: termo, mate con bombilla y la base
+  const LOGO = `
+    <g class="ln" fill="none" stroke="#f4f0e8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path pathLength="1" style="--d:0" d="M64 150 V64 Q64 52 73 52 Q82 52 82 64 V150"/>
+      <path pathLength="1" style="--d:1" d="M60 58 H86"/>
+      <path pathLength="1" style="--d:2" d="M60 66 H86"/>
+      <path pathLength="1" style="--d:3" d="M96 118 Q96 96 120 96 Q144 96 144 118 Q144 140 120 140 Q96 140 96 118 Z"/>
+      <path pathLength="1" style="--d:4" d="M96 108 H144"/>
+      <path pathLength="1" style="--d:5" d="M141 106 Q162 94 178 76"/>
+      <path pathLength="1" style="--d:6" d="M46 152 Q72 147 98 152 T152 152 T182 152"/>
+    </g>`;
+  const STEAM = `
+    <g class="steam" fill="none" stroke="#f4f0e8" stroke-width="1.6" stroke-linecap="round">
+      <path d="M110 90 q-5 -7 0 -14 q5 -7 0 -14"/>
+      <path d="M121 88 q-5 -7 0 -14 q5 -7 0 -14 q-5 -7 0 -12"/>
+      <path d="M132 90 q-5 -7 0 -14 q5 -7 0 -14"/>
+    </g>`;
+  const logoSvg = (opt = {}) =>
+    `<svg viewBox="0 0 200 200" aria-hidden="true">${opt.steam ? STEAM : ""}${LOGO}</svg>`;
+  window.CM_logoSvg = logoSvg;
+
+  // 1) Logo chico del encabezado
+  const mark = document.querySelector(".brand__mark");
+  if (mark) {
+    mark.classList.add("core");
+    mark.setAttribute("aria-hidden", "true");
+    mark.textContent = "";
+    mark.insertAdjacentHTML("beforeend", logoSvg());
+  }
+
+  // 3) Aviso "a pedido" arriba del catálogo
+  const toolbar = document.querySelector(".toolbar");
+  if (toolbar) {
+    const bar = document.createElement("div");
+    bar.className = "pedido";
+    bar.innerHTML = `<div class="wrap pedido__inner"><span class="pedido__dot" aria-hidden="true"></span>
+      <span><strong>Todos nuestros productos se fabrican a pedido.</strong> Confirmamos el plazo de entrega al cerrar tu pedido.</span></div>`;
+    toolbar.insertAdjacentElement("beforebegin", bar);
+  }
+
+  // 4) Nota en el detalle y en el carrito
+  const pDesc = $("pDesc");
+  if (pDesc) {
+    const note = document.createElement("p");
+    note.className = "a-pedido";
+    note.textContent = "Hecho a pedido · plazo confirmado al cerrar el pedido";
+    pDesc.insertAdjacentElement("afterend", note);
+  }
+  const cartHead = document.querySelector(".cart__head");
+  if (cartHead) {
+    const p = document.createElement("p");
+    p.className = "cart-pedido";
+    p.innerHTML = "<strong>Pedido a medida.</strong> Cada producto se fabrica a pedido; te confirmamos el plazo al cerrar.";
+    cartHead.insertAdjacentElement("afterend", p);
+  }
+
+  // 6) Burbuja que vuela desde "Agregar" hasta el carrito
+  const add = $("addBtn");
+  if (add && !reduce) {
+    add.addEventListener("click", () => {
+      if (add.disabled) return;
+      const from = add.getBoundingClientRect();
+      const to = $("openCart").getBoundingClientRect();
+      const x0 = from.left + from.width / 2, y0 = from.top + from.height / 2;
+      const x1 = to.left + to.width / 2, y1 = to.top + to.height / 2;
+      const d = document.createElement("div");
+      d.className = "fly";
+      document.body.appendChild(d);
+      d.animate(
+        [
+          { transform: `translate(${x0 - 8}px, ${y0 - 8}px) scale(1)`, opacity: 1 },
+          { transform: `translate(${(x0 + x1) / 2 - 8}px, ${Math.min(y0, y1) - 90}px) scale(1.3)`, opacity: 1, offset: 0.45 },
+          { transform: `translate(${x1 - 8}px, ${y1 - 8}px) scale(0.3)`, opacity: 0.2 },
+        ],
+        { duration: 800, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+      ).onfinish = () => d.remove();
+    });
+  }
+})();
+
+/* Hero "La ronda".
+   - El logo queda al centro, con vapor saliendo del mate.
+   - Los productos giran alrededor como una ronda de mate; se puede arrastrar para girar
+     y tocar cualquiera para ver el detalle.
+   - La intro (primera visita) es una cortina negra que se contrae hasta convertirse en el logo.
+   - Al bajar, la ronda se abre, el título se separa y el logo viaja hasta el encabezado. */
+(function () {
+  if (location.hash === "#/admin") return;
+  const hx = document.getElementById("hx");
+  if (!hx) return;
+
+  const $ = (id) => document.getElementById(id);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const fine = matchMedia("(pointer: fine)").matches;
+  const cfg = window.CM_CONFIG || {};
+  const stage = $("hxStage"), ring = $("hxRing"), orbit = $("hxOrbit"), dock = $("hxDock"), core = $("hxCore");
+  const lineA = hx.querySelector(".hx__line--a"), lineB = hx.querySelector(".hx__line--b");
+  const foot = hx.querySelector(".hx__foot");
+  const tops = [hx.querySelector(".hx__eyebrow"), hx.querySelector(".hx__desc")];
+  const mark = document.querySelector(".brand__mark");
+
+  const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const imgSrc = (img) => (!img ? "" : /^https?:\/\//.test(img) || img.startsWith("img/") ? img : (cfg.imageBase || "") + img);
+
+  const BASE_SPEED = 0.00016; // radianes por milisegundo (~40 s por vuelta)
+  const S = {
+    nodes: [], angle: Math.PI / 2, vel: BASE_SPEED,
+    tilt: 0.3, tiltT: 0.3, tiltBase: 0.3, px: 0, py: 0, pxT: 0, pyT: 0,
+    rx: 200, coreW: 200, coreCx: 0, coreCy: 0, markCx: 0, markCy: 0, markW: 44,
+    ready: false, started: false, entrance0: null, visible: true, drag: false, raf: 0, last: 0,
+  };
+
+  core.innerHTML = window.CM_logoSvg ? window.CM_logoSvg({ steam: true }) : "";
+
+  /* ---------- Productos de la ronda ---------- */
+  function pick(all) {
+    const n = innerWidth < 720 ? 8 : 10;
+    const order = ["Premium", "Exclusivo", "Canasta", "Bombillón", "Termo", "Print", "Crudo", "Clásico", "Combos", "Base canasta", "Madera", "Criollo", "Yerbera"];
+    const ok = all.filter((i) => i.available && i.img);
+    const out = [];
+    order.forEach((sec) => { const it = ok.find((i) => i.section === sec); if (it) out.push(it); });
+    ok.forEach((i) => { if (out.length < n && !out.includes(i)) out.push(i); });
+    return out.slice(0, n);
+  }
+
+  function build(all) {
+    if (S.nodes.length || !all || !all.length) return;
+    orbit.innerHTML = pick(all).map((it) => `
+      <button class="hx__item" type="button" data-id="${esc(it.id)}" aria-label="Ver ${esc(it.name)}">
+        <span class="hx__pic">
+          <span class="hx__ph" aria-hidden="true">${esc(it.name.charAt(0))}</span>
+          <img src="${esc(imgSrc(it.img))}" alt="" decoding="async" draggable="false" onerror="this.remove()" />
+        </span>
+        <span class="hx__tag">${esc(it.name)}<b>${fmt.format(it.price)}</b></span>
+      </button>`).join("");
+    S.nodes = [...orbit.children];
+    measure();
+    maybeStart();
+  }
+
+  /* ---------- Medidas ---------- */
+  function measure() {
+    const sr = stage.getBoundingClientRect();
+    const rr = ring.getBoundingClientRect();
+    const w = dock.offsetWidth;
+    S.coreW = w;
+    S.coreCx = rr.left + dock.offsetLeft + w / 2;
+    S.coreCy = rr.top - sr.top + dock.offsetTop + w / 2; // posición cuando el escenario está fijo arriba
+    if (mark) {
+      const m = mark.getBoundingClientRect();
+      S.markCx = m.left + m.width / 2;
+      S.markCy = m.top + m.height / 2;
+      S.markW = mark.offsetWidth || 44;
+    }
+    const small = innerWidth < 720;
+    S.tiltBase = small ? 0.55 : 0.3;
+    if (!fine) S.tiltT = S.tiltBase;
+    const itemW = S.nodes[0] ? S.nodes[0].offsetWidth : 100;
+    const maxRy = Math.max(60, rr.height * 0.5 - itemW * 0.75);
+    S.rx = Math.min(rr.width * (small ? 0.5 : 0.42), 540, maxRy / S.tiltBase);
+  }
+
+  function progress() {
+    if (reduce) return 0;
+    const span = hx.offsetHeight - innerHeight;
+    return span > 0 ? clamp(-hx.getBoundingClientRect().top / span, 0, 1) : 0;
+  }
+
+  /* ---------- Cuadro a cuadro ---------- */
+  function frame(t) {
+    S.raf = 0;
+    const p = progress(); // lectura primero, escrituras después
+    const dt = Math.min(50, t - (S.last || t));
+    S.last = t;
+
+    if (!S.drag) S.vel += (BASE_SPEED - S.vel) * 0.035;
+    if (!reduce) S.angle += S.vel * dt;
+
+    const e = S.entrance0 == null ? 0 : reduce ? 1 : clamp((t - S.entrance0) / 1700, 0, 1);
+    const ee = 1 - Math.pow(1 - e, 4);
+
+    if (!fine && !reduce) S.tiltT = S.tiltBase + Math.sin(t / 2600) * 0.05;
+    S.tilt += (S.tiltT - S.tilt) * 0.06;
+    S.px += (S.pxT - S.px) * 0.07;
+    S.py += (S.pyT - S.py) * 0.07;
+
+    const rx = S.rx * (1 + p * 0.9) * ee;
+    const ry = rx * S.tilt;
+    const fade = clamp(1 - p * 1.7, 0, 1);
+    const n = S.nodes.length;
+    for (let i = 0; i < n; i++) {
+      const el = S.nodes[i];
+      const a = S.angle + (i / n) * Math.PI * 2;
+      const s = Math.sin(a), c = Math.cos(a);
+      const d = (s + 1) / 2; // 0 = atrás, 1 = adelante
+      const appear = clamp(e * 1.6 - i * 0.05, 0, 1);
+      const x = c * rx + S.px * (0.4 + d);
+      const y = s * ry + S.py * (0.4 + d);
+      const sc = (0.58 + 0.52 * d) * (0.5 + 0.5 * ee);
+      el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) scale(${sc.toFixed(3)}) rotate(${(-c * 7).toFixed(2)}deg)`;
+      el.style.opacity = ((0.38 + 0.62 * d) * appear * fade).toFixed(3);
+      el.style.zIndex = s > 0 ? 6 : 3; // pasa por delante y por detrás del logo
+      const front = d > 0.86 && fade > 0.5 && appear > 0.9;
+      if (front !== el._front) { el._front = front; el.classList.toggle("is-front", front); }
+    }
+
+    // El logo viaja al encabezado
+    const q = easeInOut(clamp((p - 0.08) / 0.86, 0, 1));
+    const dx = (S.markCx - S.coreCx) * q + S.px * 0.35 * (1 - q);
+    const dy = (S.markCy - S.coreCy) * q + S.py * 0.35 * (1 - q);
+    const k = 1 + (S.markW / S.coreW - 1) * q;
+    dock.style.transform = `translate3d(${dx.toFixed(1)}px,${dy.toFixed(1)}px,0) scale(${k.toFixed(4)})`;
+    const docked = p > 0.985;
+    dock.style.opacity = docked ? "0" : "1";
+    document.body.classList.toggle("hx-docking", !docked && !reduce);
+    const leaving = p > 0.5;
+    if (leaving !== S.leaving) { S.leaving = leaving; hx.classList.toggle("is-leaving", leaving); }
+
+    // El título se separa y el resto se desvanece
+    const tf = clamp(1 - p * 1.5, 0, 1).toFixed(3);
+    lineA.style.transform = `translate3d(${(-p * 38).toFixed(2)}vw,0,0)`;
+    lineB.style.transform = `translate3d(${(p * 38).toFixed(2)}vw,0,0)`;
+    lineA.style.opacity = lineB.style.opacity = tf;
+    tops.forEach((el) => el && (el.style.opacity = clamp(1 - p * 3, 0, 1).toFixed(3)));
+    foot.style.opacity = clamp(1 - p * 3, 0, 1).toFixed(3);
+
+    if (S.visible && !document.hidden && !reduce) S.raf = requestAnimationFrame(frame);
+  }
+  const kick = () => { if (!S.raf) S.raf = requestAnimationFrame(frame); };
+
+  /* ---------- Arranque ---------- */
+  function countUp() {
+    hx.querySelectorAll("[data-count]").forEach((b) => {
+      const to = Number(b.dataset.count) || 0;
+      if (reduce) { b.textContent = to; return; }
+      const t0 = performance.now();
+      const step = (t) => {
+        const k = clamp((t - t0) / 1400, 0, 1);
+        b.textContent = Math.round(to * (1 - Math.pow(1 - k, 3)));
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    });
+  }
+
+  function ready() {
+    S.ready = true;
+    hx.classList.add("is-ready");
+    maybeStart();
+    kick();
+  }
+
+  function maybeStart() {
+    if (!S.ready || !S.nodes.length || S.started) return;
+    S.started = true;
+    S.entrance0 = performance.now();
+    countUp();
+    kick();
+  }
+
+  /* Intro: cortina negra con el logo que se contrae hasta quedar exactamente en el logo del hero */
+  function runIntro(done) {
+    const root = document.documentElement;
+    let first = false;
+    try { first = !reduce && !sessionStorage.getItem("cm_intro"); if (first) sessionStorage.setItem("cm_intro", "1"); } catch (_) {}
+    if (!first) { root.classList.remove("intro-pending"); return false; }
+
+    const r = dock.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    const far = Math.hypot(Math.max(cx, innerWidth - cx), Math.max(cy, innerHeight - cy)) + 4;
+    const o = document.createElement("div");
+    o.className = "intro";
+    o.setAttribute("role", "presentation");
+    o.innerHTML = `<div class="intro__core core" style="left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px">${window.CM_logoSvg ? window.CM_logoSvg() : ""}</div>`;
+    document.body.appendChild(o);
+    root.classList.remove("intro-pending");
+    root.style.overflow = "hidden";
+
+    let fired = false;
+    const go = () => {
+      if (fired) return;
+      fired = true;
+      const anim = o.animate(
+        [{ clipPath: `circle(${far}px at ${cx}px ${cy}px)` }, { clipPath: `circle(${r.width / 2}px at ${cx}px ${cy}px)` }],
+        { duration: 1000, easing: "cubic-bezier(0.76, 0, 0.24, 1)", fill: "forwards" }
+      );
+      anim.onfinish = () => { o.remove(); root.style.overflow = ""; done(); };
+    };
+    setTimeout(go, 1300);
+    o.addEventListener("click", go);
+    return true;
+  }
+
+  /* ---------- Interacción ---------- */
+  if (fine && !reduce) {
+    addEventListener("pointermove", (e) => {
+      if (S.drag) return;
+      const nx = e.clientX / innerWidth - 0.5, ny = e.clientY / innerHeight - 0.5;
+      S.tiltT = S.tiltBase + ny * 0.14;
+      S.pxT = -nx * 22;
+      S.pyT = -ny * 12;
+    }, { passive: true });
+  }
+
+  let downX = 0, lastX = 0, lastT = 0, moved = 0, suppress = false;
+  ring.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || reduce) return;
+    S.drag = true;
+    downX = lastX = e.clientX;
+    lastT = performance.now();
+    moved = 0;
+    suppress = false;
+    ring.classList.add("is-drag");
+  });
+  addEventListener("pointermove", (e) => {
+    if (!S.drag) return;
+    const now = performance.now(), dx = e.clientX - lastX;
+    moved = Math.max(moved, Math.abs(e.clientX - downX));
+    const da = -dx / Math.max(120, S.rx);
+    S.angle += da;
+    S.vel = clamp(da / Math.max(1, now - lastT), -0.006, 0.006);
+    lastX = e.clientX;
+    lastT = now;
+    kick();
+  }, { passive: true });
+  const endDrag = () => {
+    if (!S.drag) return;
+    S.drag = false;
+    ring.classList.remove("is-drag");
+    suppress = moved > 6;
+    setTimeout(() => { suppress = false; }, 0);
+  };
+  addEventListener("pointerup", endDrag);
+  addEventListener("pointercancel", endDrag);
+
+  orbit.addEventListener("click", (e) => {
+    const b = e.target.closest(".hx__item");
+    if (!b || suppress) return;
+    if (window.CM_openProduct) window.CM_openProduct(b.dataset.id);
+  });
+
+  /* ---------- Ciclo de vida ---------- */
+  new IntersectionObserver(([en]) => { S.visible = en.isIntersecting; if (S.visible) kick(); }).observe(hx);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) kick(); });
+  addEventListener("scroll", kick, { passive: true });
+  addEventListener("resize", () => { measure(); kick(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); kick(); });
+
+  measure();
+  hx.classList.add("is-core");
+  if (!runIntro(ready)) setTimeout(ready, reduce ? 0 : 350);
+  if (window.CM_ITEMS) build(window.CM_ITEMS);
+  document.addEventListener("cm:catalog", (e) => build(e.detail));
+  kick();
 })();
 
 </script>
